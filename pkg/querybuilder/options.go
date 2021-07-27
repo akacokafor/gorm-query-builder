@@ -2,6 +2,7 @@ package querybuilder
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -27,7 +28,7 @@ type Options struct {
 	Size     *int                     `json:"size" form:"size" query:"size"`
 	Filters  map[string]interface{} `json:"filter" form:"filter" query:"filter"`
 	Sort     []Sort                   `json:"sort" form:"sort" query:"sort"`
-	Includes []string                 `json:"includes" form:"include" query:"include"`
+	Includes []string                 `json:"include" form:"include" query:"include"`
 	Fields   map[string][]string      `json:"fields" form:"fields" query:"fields"`
 	Errors   []error                  `json:"errors"`
 	filterRegex *regexp.Regexp
@@ -51,6 +52,7 @@ func NewOptions() (*Options, error) {
 }
 
 func (p *Options) setIncludes(queryParams url.Values) *Options {
+	log.Print(queryParams.Get("include"))
 	p.Includes = strings.Split(queryParams.Get("include"),",")
 	return p
 }
@@ -148,6 +150,9 @@ func (p *Options) setPage(queryParams url.Values) *Options {
 		if err != nil {
 			p.Errors = append(p.Errors, fmt.Errorf("page parse error: %w", err))
 			return p
+		}
+		if pageInt <= 0 {
+			pageInt = 1
 		}
 		p.Page = &pageInt
 	}

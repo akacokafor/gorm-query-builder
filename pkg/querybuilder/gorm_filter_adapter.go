@@ -64,6 +64,7 @@ func (g *GormAdapter) applyFilters(instance *Options) error {
 				return err
 			}
 		}
+		return nil
 	}
 
 	for suppliedFilterKey, _ := range instance.Filters {
@@ -87,6 +88,27 @@ func (g *GormAdapter) applyFilters(instance *Options) error {
 			}
 		}
 	}
+
+	return nil
+}
+
+func (g *GormAdapter) applyQuery(instance *Options) error {
+	if len(g.filtersWhitelist) == 0 || instance.Query == nil {
+		return nil
+	}
+
+	var q *gorm.DB
+	for _, whiteListFilterEntry := range g.filtersWhitelist {
+		if _k, ok := whiteListFilterEntry.(string); ok {
+			if q == nil {
+				q = g.db.Or(fmt.Sprintf("%s LIKE ?",_k),fmt.Sprintf("%%%s%%",*instance.Query))
+			}else {
+				q = q.Or(fmt.Sprintf("%s LIKE ?",_k),fmt.Sprintf("%%%s%%",*instance.Query))
+			}
+		}
+	}
+
+	g.db.Where(q)
 
 	return nil
 }

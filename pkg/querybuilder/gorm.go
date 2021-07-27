@@ -3,6 +3,7 @@ package querybuilder
 import (
 	"errors"
 	"gorm.io/gorm"
+	"strings"
 )
 
 var (
@@ -13,12 +14,16 @@ var (
 
 
 type GormAdapter struct {
-	db *gorm.DB
-	fieldsWhiteList []interface{}
-	includesWhitelist []interface{}
-	filtersWhitelist []interface{}
-	sortWhitelist []interface{}
-	defaultSort string
+	db                  *gorm.DB
+	filtersWhitelist    []interface{}
+	sortWhitelist       []interface{}
+	fieldsWhiteList     []interface{}
+	includesWhitelist   []interface{}
+	defaultSort         string
+	defaultToPagination bool
+	defaultPage         int
+	defaultSize         int
+	relationships       []string
 }
 
 //AllowedFilters white lists only the acceptable filters that can be applied from the query parameters
@@ -52,17 +57,38 @@ func (g *GormAdapter) AllowedSorts(sortWhitelist []interface{}) *GormAdapter {
 	return g
 }
 
+
 func (g *GormAdapter) ExecuteOnUrl(url string) (*gorm.DB, error) {
 	optionsInstance, err := ParseUrl(url)
 	if err != nil {
 		return g.db, err
 	}
 
+	return g.Execute(optionsInstance)
+}
+
+func (g *GormAdapter) Execute(optionsInstance *Options) (*gorm.DB, error) {
 	if err := g.validate(optionsInstance); err != nil {
 		return g.db, err
 	}
-
 	if err := g.applyOptions(optionsInstance); err != nil {
+		return g.db, err
+	}
+
+	return g.db, nil
+}
+
+func (g *GormAdapter) Paginate(optionsInstance *Options) (*gorm.DB, error) {
+
+	g.defaultToPagination = true
+	g.defaultPage = 1
+	g.defaultSize = 30
+
+	if _, err := g.Execute(optionsInstance); err != nil {
+		return g.db, err
+	}
+
+	if err := g.applyPagination(optionsInstance); err != nil {
 		return g.db, err
 	}
 
@@ -82,7 +108,12 @@ func (g *GormAdapter) validate(instance *Options) error {
 }
 
 func (g *GormAdapter) applyOptions(instance *Options) error {
+
 	if err := g.applyFilters(instance); err != nil {
+		return err
+	}
+
+	if err := g.applyQuery(instance); err != nil {
 		return err
 	}
 
@@ -90,9 +121,57 @@ func (g *GormAdapter) applyOptions(instance *Options) error {
 		return err
 	}
 
+	if err := g.applyIncludes(instance); err != nil {
+		return err
+	}
+
 	return nil
 }
 
+func (g *GormAdapter) normalizeIncludeName(name string) string {
+	var sb strings.Builder
+	componentParts := strings.Split(name,".")
+	for index, part := range componentParts {
+		if len(part) > 0 {
+			sb.WriteString(strings.ToUpper(part[:1]))
+			sb.WriteString(strings.ToLower(part[1:]))
+			if index != len(componentParts) - 1 {
+				sb.WriteString(".")
+			}
+		}
+	}
+	return sb.String()
+}
+
+func (g *GormAdapter) applyPagination(instance *Options) error {
+	if g.defaultToPagination && instance.Page == nil {
+		instance.Page = &g.defaultPage
+	}
+
+	if instance.Page == nil {
+		return nil
+	}
+
+	if instance.Size == nil {
+		instance.Size = &g.defaultSize
+	}
+
+	page := *instance.Page
+	size := *instance.Size
+	offset := (page - 1) * size
+	g.db.Offset(offset).Limit(size)
+	return nil
+}
+
+func (g *GormAdapter) addRelationship(name string) {
+	g.relationships = append(g.relationships, name)
+}
+
+func (g *GormAdapter) GetRelationships() []string {
+	var relationships []string
+	relationships = append(relationships,g.relationships...)
+	return relationships
+}
 
 func NewGormAdapter(db *gorm.DB) *GormAdapter {
 	return &GormAdapter{db: db}

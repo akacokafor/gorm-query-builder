@@ -20,6 +20,7 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 	}
 
 	type fields struct {
+		instance *querybuilder.GormAdapter
 		db                *gorm.DB
 		fieldsWhiteList   []interface{}
 		includesWhitelist []interface{}
@@ -266,6 +267,27 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 				assert.Contains(t, sqlString, "ORDER BY LENGTH(name) DESC, `created_at` ASC")
 			},
 		},
+
+		{
+			name: "Should successfully append includes as preload options",
+			fields: fields{
+				db:                db,
+				fieldsWhiteList:   nil,
+				includesWhitelist: []interface{}{
+					"wallet",
+					"wallet.bank_account",
+				},
+				defaultSort: "",
+			},
+			args: args{
+				url: "https://example.com?include=wallet,wallet.bank_account",
+			},
+			validator: func(t *testing.T, f *fields, db *gorm.DB, err error) {
+				assert.Nil(t, err)
+				assert.Contains(t, f.instance.GetRelationships(), "Wallet")
+				assert.Contains(t, f.instance.GetRelationships(), "Wallet.BankAccount")
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -277,6 +299,7 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 				AllowedFields(tt.fields.fieldsWhiteList).
 				DefaultSort(tt.fields.defaultSort)
 
+			tt.fields.instance = g
 			got, err := g.ExecuteOnUrl(tt.args.url)
 			tt.validator(t, &tt.fields, got, err)
 		})
