@@ -133,14 +133,28 @@ func (g *GormAdapter) normalizeIncludeName(name string) string {
 	componentParts := strings.Split(name,".")
 	for index, part := range componentParts {
 		if len(part) > 0 {
-			sb.WriteString(strings.ToUpper(part[:1]))
-			sb.WriteString(strings.ToLower(part[1:]))
+			sb.WriteString(toCamelCase(part))
 			if index != len(componentParts) - 1 {
 				sb.WriteString(".")
 			}
 		}
 	}
 	return sb.String()
+}
+
+func toCamelCase(part string) string {
+	parts := strings.Split(strings.ReplaceAll(part,"-","_"), "_")
+	var r strings.Builder
+	for _, s := range parts {
+		if len(s) > 1 {
+			r.WriteString(strings.ToUpper(s[:1]))
+			r.WriteString(strings.ToLower(s[1:]))
+		} else {
+			r.WriteString(strings.ToUpper(s))
+		}
+	}
+	result :=  r.String()
+	return result
 }
 
 func (g *GormAdapter) applyPagination(instance *Options) error {
