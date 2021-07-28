@@ -4,21 +4,24 @@ import (
 	"errors"
 	"fmt"
 	"gorm.io/gorm"
+	"log"
+	"reflect"
 	"strings"
 )
 
 type GormAllowedSort interface {
 	Names() []string
-	Execute(db *gorm.DB, options *Options) error
+	Execute(db *gorm.DB, options OptionsInterface) error
 }
 
-func (g *GormAdapter) validateSorts(instance *Options) error {
+func (g *GormAdapter) validateSorts(instance OptionsInterface) error {
 
 	if len( g.sortWhitelist) == 0 {
 		return nil
 	}
 
 	for _, entry := range g.sortWhitelist {
+		log.Printf("entry = %s", reflect.TypeOf(entry).String())
 		_, isString := entry.(string)
 		_, isAllowedFilter := entry.(GormAllowedSort)
 		if !isAllowedFilter && !isString {
@@ -26,19 +29,19 @@ func (g *GormAdapter) validateSorts(instance *Options) error {
 		}
 	}
 
-	for _, name := range instance.Sort {
+	for _, name := range instance.GetSort() {
 		if !g.isValidSortName(name) {
-			return fmt.Errorf("invalid sort key %s, %w", name.Name, ErrInvalidSortQuery)
+			return fmt.Errorf("invalid sort key %s, %w", name.GetName(), ErrInvalidSortQuery)
 		}
 	}
 
 	return nil
 }
 
-func (g *GormAdapter) isValidSortName(name Sort) bool {
+func (g *GormAdapter) isValidSortName(name Sortable) bool {
 	sortNames := g.getSortNames(g.sortWhitelist)
 	for _, validKey := range sortNames {
-		if name.Name == validKey {
+		if name.GetName() == validKey {
 			return true
 		}
 	}
@@ -59,20 +62,25 @@ func (g *GormAdapter) getSortNames(whitelist []interface{}) []string {
 	return keys
 }
 
-func (g *GormAdapter) applySorts(instance *Options) error {
+func (g *GormAdapter) applySorts(instance OptionsInterface) error {
 
-	if g.defaultSort != "" && len(instance.Sort) == 0 {
-		instance.addSort(g.defaultSort)
+	sortableList := instance.GetSort()
+	if g.defaultSort != nil && len(sortableList) == 0 {
+		sortableList = append(sortableList, g.defaultSort)
 	}
 
 	if len(g.sortWhitelist) == 0 {
 		orderStr := ""
 		separator := ""
-		for index, val := range instance.Sort {
+		for index, val := range sortableList {
 			if index > 0 && separator != "," {
 				separator = ","
 			}
-			orderStr = strings.TrimSpace(fmt.Sprintf("%s%s `%s` %s",orderStr, separator,val.Name,val.Direction()))
+			direction := "ASC"
+			if !val.IsAscending() {
+				direction = "DESC"
+			}
+			orderStr = strings.TrimSpace(fmt.Sprintf("%s%s `%s` %s",orderStr, separator,val.GetName(),direction))
 		}
 		if orderStr != "" {
 			g.db.Order(orderStr)
@@ -83,14 +91,19 @@ func (g *GormAdapter) applySorts(instance *Options) error {
 
 	orderStr := ""
 	separator := ""
-	for index, sortEntry := range instance.Sort {
+	for index, sortEntry := range sortableList {
 		if index > 0 && separator != "," {
 			separator = ","
 		}
 		for _, sortWhiteListEntry := range g.sortWhitelist {
 			if _k, ok := sortWhiteListEntry.(string); ok {
-				if _k == sortEntry.Name {
-					orderStr = strings.TrimSpace(fmt.Sprintf("%s%s `%s` %s",orderStr, separator,sortEntry.Name,sortEntry.Direction()))
+				if _k == sortEntry.GetName() {
+					direction := "ASC"
+					if !sortEntry.IsAscending() {
+						direction = "DESC"
+					}
+
+					orderStr = strings.TrimSpace(fmt.Sprintf("%s%s `%s` %s",orderStr, separator,sortEntry.GetName(),direction))
 					if orderStr[:1] == "," {
 						orderStr = orderStr[1:]
 					}
@@ -99,7 +112,7 @@ func (g *GormAdapter) applySorts(instance *Options) error {
 
 			if op, ok := sortWhiteListEntry.(GormAllowedSort); ok {
 				for _, _k := range op.Names() {
-					if _k == sortEntry.Name {
+					if _k == sortEntry.GetName() {
 						if err := op.Execute(g.db,instance); err != nil {
 							return err
 						}

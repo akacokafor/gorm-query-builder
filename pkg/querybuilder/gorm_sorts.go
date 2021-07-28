@@ -16,15 +16,18 @@ func (g *GormAllowedSortCustom) Names() []string {
 	}
 }
 
-func (g *GormAllowedSortCustom) Execute(db *gorm.DB, options *Options) error {
-	for _, sort := range options.Sort {
-		if sort.Name == g.propName {
-			return g.sorter(db, sort.Ascending, g.propName)
+func (g *GormAllowedSortCustom) Execute(db *gorm.DB, options OptionsInterface) error {
+	for _, sort := range options.GetSort() {
+		if sort.GetName() == g.propName {
+			return g.sorter(db, sort.IsAscending(), g.propName)
 		}
 	}
 	return nil
 }
 
 func NewGormAllowedSortCustom(propName string, sorter GormAllowedSorter) *GormAllowedSortCustom {
-	return &GormAllowedSortCustom{propName: propName, sorter: sorter}
+	return &GormAllowedSortCustom{
+		propName: propName,
+		sorter: sorter,
+	}
 }

@@ -14,8 +14,8 @@ func (g *GormAllowedFilterExact) Keys() []string {
 	return []string{g.propName}
 }
 
-func (g *GormAllowedFilterExact) Execute(db *gorm.DB, options *Options) error {
-	val := options.Filters[g.propName]
+func (g *GormAllowedFilterExact) Execute(db *gorm.DB, options OptionsInterface) error {
+	val := options.GetFilters()[g.propName]
 	if val == nil {
 		return nil
 	}
@@ -37,8 +37,8 @@ func (g *GormAllowedFilterSearch) Keys() []string {
 	return []string{g.propName}
 }
 
-func (g *GormAllowedFilterSearch) Execute(db *gorm.DB, options *Options) error {
-	val := options.Filters[g.propName]
+func (g *GormAllowedFilterSearch) Execute(db *gorm.DB, options OptionsInterface) error {
+	val := options.GetFilters()[g.propName]
 	if val == nil {
 		return nil
 	}

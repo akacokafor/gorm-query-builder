@@ -26,7 +26,7 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 		includesWhitelist []interface{}
 		filtersWhitelist  []interface{}
 		sortWhitelist     []interface{}
-		defaultSort       string
+		defaultSort       querybuilder.Sortable
 	}
 	type args struct {
 		url string
@@ -48,7 +48,6 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 					"is_completed",
 				},
 				sortWhitelist: nil,
-				defaultSort:   "",
 			},
 			args: args{
 				url: "https://example.com?filter[active]=1",
@@ -69,7 +68,6 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 					"is_completed",
 				},
 				sortWhitelist: nil,
-				defaultSort:   "",
 			},
 			args: args{
 				url: "https://example.com?filter[active]=1&filter[status]=completed",
@@ -90,7 +88,6 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 					querybuilder.NewGormAllowedFilterExact("is_completed"),
 				},
 				sortWhitelist: nil,
-				defaultSort:   "",
 			},
 			args: args{
 				url: "https://example.com?filter[is_completed]=1",
@@ -114,7 +111,7 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 					querybuilder.NewGormAllowedFilterExact("is_completed"),
 				},
 				sortWhitelist: nil,
-				defaultSort:   "",
+				
 			},
 			args: args{
 				url: "https://example.com?filter[is_completed]=1&filter[status]=completed",
@@ -143,7 +140,7 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 					"created_at",
 					"id",
 				},
-				defaultSort: "",
+				
 			},
 			args: args{
 				url: "https://example.com?sort=created_at,-age",
@@ -163,7 +160,7 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 					"created_at",
 					"id",
 				},
-				defaultSort: "",
+				
 			},
 			args: args{
 				url: "https://example.com?sort=created_at",
@@ -186,7 +183,10 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 					"created_at",
 					"id",
 				},
-				defaultSort: "created_at",
+				defaultSort: querybuilder.Sort{
+					Name:      "created_at",
+					Ascending: true,
+				},
 			},
 			args: args{
 				url: "https://example.com",
@@ -220,7 +220,7 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 							return nil
 						}),
 				},
-				defaultSort: "",
+				
 			},
 			args: args{
 				url: "https://example.com?sort=-name_length",
@@ -254,7 +254,7 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 							return nil
 						}),
 				},
-				defaultSort: "",
+				
 			},
 			args: args{
 				url: "https://example.com?sort=-name_length,created_at",
@@ -277,7 +277,7 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 					"wallet",
 					"wallet.bank_account",
 				},
-				defaultSort: "",
+				
 			},
 			args: args{
 				url: "https://example.com?include=wallet,wallet.bank_account",

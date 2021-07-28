@@ -18,19 +18,41 @@ func (s Sort) Direction() string {
 	if s.Ascending {
 		return "ASC"
 	}
-
 	return "DESC"
 }
 
+func (s Sort) IsAscending() bool {
+	return  s.Ascending
+}
+
+func (s Sort) GetName() string {
+	return  s.Name
+}
+
+type Sortable interface {
+	IsAscending() bool
+	GetName() string
+}
+
+type OptionsInterface interface {
+	GetPage() *int
+	GetSize() *int
+	GetQuery() *string
+	GetFilters() map[string]interface{}
+	GetIncludes() []string
+	GetSort() []Sortable
+	GetFields() map[string][]string
+}
+
 type Options struct {
-	Query    *string                  `json:"q" form:"q" query:"q"`
-	Page     *int                     `json:"page" form:"page" query:"page"`
-	Size     *int                     `json:"size" form:"size" query:"size"`
-	Filters  map[string]interface{} `json:"filter" form:"filter" query:"filter"`
-	Sort     []Sort                   `json:"sort" form:"sort" query:"sort"`
-	Includes []string                 `json:"include" form:"include" query:"include"`
-	Fields   map[string][]string      `json:"fields" form:"fields" query:"fields"`
-	Errors   []error                  `json:"errors"`
+	Query    *string
+	Page     *int
+	Size     *int
+	Filters  map[string]interface{}
+	Sort     []Sortable
+	Includes []string
+	Fields   map[string][]string
+	Errors   []error
 	filterRegex *regexp.Regexp
 	fieldsRegex *regexp.Regexp
 }
@@ -50,6 +72,35 @@ func NewOptions() (*Options, error) {
 		fieldsRegex: fieldsRegex,
 	}, nil
 }
+
+func (p *Options) GetPage() *int {
+	return p.Page
+}
+
+func (p *Options) GetSize() *int {
+	return p.Size
+}
+
+func (p *Options) GetQuery() *string {
+	return p.Query
+}
+
+func (p *Options) GetFilters() map[string]interface{} {
+	return p.Filters
+}
+
+func (p *Options) GetIncludes() []string  {
+	return p.Includes
+}
+
+func (p *Options) GetSort() []Sortable  {
+	return p.Sort
+}
+
+func (p *Options) GetFields() map[string][]string  {
+	return p.Fields
+}
+
 
 func (p *Options) setIncludes(queryParams url.Values) *Options {
 	log.Print(queryParams.Get("include"))
@@ -125,7 +176,7 @@ func (p *Options) addSort(val string) {
 			s.Ascending = false
 			s.Name = sortItem[1:]
 		}
-		p.Sort = append(p.Sort, s)
+		p.Sort = append(p.Sort, &s)
 	}
 }
 

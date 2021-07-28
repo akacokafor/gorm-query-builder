@@ -74,8 +74,8 @@ func TestParseUrl(t *testing.T) {
 				assert.Equal(t, *p.Page, 2)
 				assert.Equal(t, *p.Size, 15)
 				assert.Len(t, p.Sort, 1)
-				assert.Equal(t, p.Sort[0].Name, "name")
-				assert.False(t, p.Sort[0].Ascending)
+				assert.Equal(t, p.Sort[0].GetName(), "name")
+				assert.False(t, p.Sort[0].IsAscending())
 			},
 		},
 		{
@@ -94,8 +94,8 @@ func TestParseUrl(t *testing.T) {
 				assert.Equal(t, *p.Page, 2)
 				assert.Equal(t, *p.Size, 15)
 				assert.Len(t, p.Sort, 1)
-				assert.Equal(t, p.Sort[0].Name, "name")
-				assert.True(t, p.Sort[0].Ascending)
+				assert.Equal(t, p.Sort[0].GetName(), "name")
+				assert.True(t, p.Sort[0].IsAscending())
 			},
 		},
 		{
@@ -114,10 +114,10 @@ func TestParseUrl(t *testing.T) {
 				assert.Equal(t, *p.Page, 2)
 				assert.Equal(t, *p.Size, 15)
 				assert.Len(t, p.Sort, 2)
-				assert.Equal(t, p.Sort[0].Name, "name")
-				assert.True(t, p.Sort[0].Ascending)
-				assert.Equal(t, p.Sort[1].Name, "age")
-				assert.False(t, p.Sort[1].Ascending)
+				assert.Equal(t, p.Sort[0].GetName(), "name")
+				assert.True(t, p.Sort[0].IsAscending())
+				assert.Equal(t, p.Sort[1].GetName(), "age")
+				assert.False(t, p.Sort[1].IsAscending())
 			},
 		},
 		{
@@ -138,10 +138,10 @@ func TestParseUrl(t *testing.T) {
 				assert.Equal(t, *p.Size, 15)
 				assert.Len(t, p.Sort, 2)
 				assert.Len(t, p.Filters, 1)
-				assert.Equal(t, "name", p.Sort[0].Name)
-				assert.True(t, p.Sort[0].Ascending)
-				assert.Equal(t, "age", p.Sort[1].Name)
-				assert.False(t, p.Sort[1].Ascending)
+				assert.Equal(t, "name", p.Sort[0].GetName())
+				assert.True(t, p.Sort[0].IsAscending())
+				assert.Equal(t, "age", p.Sort[1].GetName())
+				assert.False(t, p.Sort[1].IsAscending())
 				assert.Equal(t, 1, p.Filters["active"])
 			},
 		},
@@ -163,10 +163,10 @@ func TestParseUrl(t *testing.T) {
 				assert.Equal(t, *p.Size, 15)
 				assert.Len(t, p.Sort, 2)
 				assert.Len(t, p.Filters, 1)
-				assert.Equal(t, "name", p.Sort[0].Name)
-				assert.True(t, p.Sort[0].Ascending)
-				assert.Equal(t, "age", p.Sort[1].Name)
-				assert.False(t, p.Sort[1].Ascending)
+				assert.Equal(t, "name", p.Sort[0].GetName())
+				assert.True(t, p.Sort[0].IsAscending())
+				assert.Equal(t, "age", p.Sort[1].GetName())
+				assert.False(t, p.Sort[1].IsAscending())
 				assert.Equal(t, 1, p.Filters["active"])
 				assert.Equal(t, "user", p.Includes[0])
 				assert.Equal(t, "mobile", p.Includes[1])
@@ -190,10 +190,10 @@ func TestParseUrl(t *testing.T) {
 				assert.Equal(t, *p.Size, 15)
 				assert.Len(t, p.Sort, 2)
 				assert.Len(t, p.Filters, 1)
-				assert.Equal(t, "name", p.Sort[0].Name)
-				assert.True(t, p.Sort[0].Ascending)
-				assert.Equal(t, "age", p.Sort[1].Name)
-				assert.False(t, p.Sort[1].Ascending)
+				assert.Equal(t, "name", p.Sort[0].GetName())
+				assert.True(t, p.Sort[0].IsAscending())
+				assert.Equal(t, "age", p.Sort[1].GetName())
+				assert.False(t, p.Sort[1].IsAscending())
 				assert.Equal(t, 1, p.Filters["active"])
 				assert.Equal(t, "user", p.Includes[0])
 				assert.Equal(t, "mobile", p.Includes[1])

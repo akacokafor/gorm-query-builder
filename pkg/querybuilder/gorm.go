@@ -19,7 +19,7 @@ type GormAdapter struct {
 	sortWhitelist       []interface{}
 	fieldsWhiteList     []interface{}
 	includesWhitelist   []interface{}
-	defaultSort         string
+	defaultSort         Sortable
 	defaultToPagination bool
 	defaultPage         int
 	defaultSize         int
@@ -46,7 +46,7 @@ func (g *GormAdapter) AllowedFields(fieldsWhiteList []interface{}) *GormAdapter 
 }
 
 //DefaultSort sets the default sort to apply on query
-func (g *GormAdapter) DefaultSort(defaultSort string) *GormAdapter {
+func (g *GormAdapter) DefaultSort(defaultSort Sortable) *GormAdapter {
 	g.defaultSort = defaultSort
 	return g
 }
@@ -67,7 +67,7 @@ func (g *GormAdapter) ExecuteOnUrl(url string) (*gorm.DB, error) {
 	return g.Execute(optionsInstance)
 }
 
-func (g *GormAdapter) Execute(optionsInstance *Options) (*gorm.DB, error) {
+func (g *GormAdapter) Execute(optionsInstance OptionsInterface) (*gorm.DB, error) {
 	if err := g.validate(optionsInstance); err != nil {
 		return g.db, err
 	}
@@ -78,7 +78,7 @@ func (g *GormAdapter) Execute(optionsInstance *Options) (*gorm.DB, error) {
 	return g.db, nil
 }
 
-func (g *GormAdapter) Paginate(optionsInstance *Options) (*gorm.DB, error) {
+func (g *GormAdapter) Paginate(optionsInstance OptionsInterface) (*gorm.DB, error) {
 
 	g.defaultToPagination = true
 	g.defaultPage = 1
@@ -95,7 +95,7 @@ func (g *GormAdapter) Paginate(optionsInstance *Options) (*gorm.DB, error) {
 	return g.db, nil
 }
 
-func (g *GormAdapter) validate(instance *Options) error {
+func (g *GormAdapter) validate(instance OptionsInterface) error {
 	if err := g.validateFilters(instance); err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (g *GormAdapter) validate(instance *Options) error {
 	return nil
 }
 
-func (g *GormAdapter) applyOptions(instance *Options) error {
+func (g *GormAdapter) applyOptions(instance OptionsInterface) error {
 
 	if err := g.applyFilters(instance); err != nil {
 		return err
@@ -157,21 +157,26 @@ func toCamelCase(part string) string {
 	return result
 }
 
-func (g *GormAdapter) applyPagination(instance *Options) error {
-	if g.defaultToPagination && instance.Page == nil {
-		instance.Page = &g.defaultPage
+func (g *GormAdapter) applyPagination(instance OptionsInterface) error {
+	var currentPage *int
+	if g.defaultToPagination  {
+		currentPage = &g.defaultPage
 	}
 
-	if instance.Page == nil {
+	if currentPage == nil {
 		return nil
 	}
 
-	if instance.Size == nil {
-		instance.Size = &g.defaultSize
+	var sizeAddr *int
+	if instance.GetSize() == nil {
+		sizeAddr  = &g.defaultSize
 	}
 
-	page := *instance.Page
-	size := *instance.Size
+	page := *currentPage
+	size := 20
+	if sizeAddr != nil {
+		size = *sizeAddr
+	}
 	offset := (page - 1) * size
 	g.db.Offset(offset).Limit(size)
 	return nil

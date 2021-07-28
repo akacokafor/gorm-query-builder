@@ -2,10 +2,10 @@ package querybuilder
 
 import "log"
 
-func (g *GormAdapter) applyIncludes(instance *Options) error {
+func (g *GormAdapter) applyIncludes(instance OptionsInterface) error {
 	if len(g.includesWhitelist) == 0 {
-		log.Print(instance.Includes)
-		for _, val := range instance.Includes {
+		log.Print(instance.GetIncludes())
+		for _, val := range instance.GetIncludes() {
 			relationshipName := g.normalizeIncludeName(val)
 			g.addRelationship(relationshipName)
 			g.db.Preload(relationshipName)
@@ -13,7 +13,7 @@ func (g *GormAdapter) applyIncludes(instance *Options) error {
 		return nil
 	}
 
-	for _, suppliedInclude := range instance.Includes {
+	for _, suppliedInclude := range instance.GetIncludes() {
 		for _, whiteListIncludeEntry := range g.includesWhitelist {
 			if _k, ok := whiteListIncludeEntry.(string); ok {
 				if _k == suppliedInclude {
