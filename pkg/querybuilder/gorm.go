@@ -167,16 +167,13 @@ func (g *GormAdapter) applyPagination(instance OptionsInterface) error {
 		return nil
 	}
 
-	var sizeAddr *int
-	if instance.GetSize() == nil {
+	sizeAddr := instance.GetSize()
+	if sizeAddr == nil {
 		sizeAddr  = &g.defaultSize
 	}
 
 	page := *currentPage
-	size := 20
-	if sizeAddr != nil {
-		size = *sizeAddr
-	}
+	size := *sizeAddr
 	offset := (page - 1) * size
 	g.db.Offset(offset).Limit(size)
 	return nil
