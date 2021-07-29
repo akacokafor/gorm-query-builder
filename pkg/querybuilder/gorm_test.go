@@ -131,6 +131,39 @@ func TestGormAdapter_ExecuteOnUrl(t *testing.T) {
 			},
 		},
 		{
+			name: "Should successfully accept GormAllowedFilterExact and pagination params",
+			fields: fields{
+				db:                db,
+				fieldsWhiteList:   nil,
+				includesWhitelist: nil,
+				filtersWhitelist: []interface{}{
+					"status",
+					querybuilder.NewGormAllowedFilterExact("is_completed"),
+				},
+				sortWhitelist: nil,
+
+			},
+			args: args{
+				url: "https://example.com?filter[is_completed]=1&filter[status]=completed&page=2&size=10",
+			},
+			validator: func(t *testing.T, f *fields, db *gorm.DB, err error) {
+				stmt := db.Scan(&map[string]interface{}{}).Statement
+				sqlString := db.Dialector.Explain(stmt.SQL.String(), stmt.Vars...)
+				fmt.Printf(sqlString)
+				assert.Nil(t, err)
+				assert.NotNil(t, stmt)
+				assert.Contains(t, sqlString, "`is_completed` = 1")
+				if dialect == "mysql" {
+					assert.Contains(t, sqlString, "`status` LIKE '%completed%'")
+				}
+				if dialect == "sqlite" {
+					assert.Contains(t, sqlString, "`status` LIKE \"%completed%\"")
+				}
+					assert.Contains(t, sqlString, "OFFSET 10")
+					assert.Contains(t, sqlString, "LIMIT 10")
+			},
+		},
+		{
 			name: "Should throw error when sort supplied is not in allowed sorts",
 			fields: fields{
 				db:                db,

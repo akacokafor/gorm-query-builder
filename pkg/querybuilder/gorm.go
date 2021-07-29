@@ -88,10 +88,6 @@ func (g *GormAdapter) Paginate(optionsInstance OptionsInterface) (*gorm.DB, erro
 		return g.db, err
 	}
 
-	if err := g.applyPagination(optionsInstance); err != nil {
-		return g.db, err
-	}
-
 	return g.db, nil
 }
 
@@ -122,6 +118,10 @@ func (g *GormAdapter) applyOptions(instance OptionsInterface) error {
 	}
 
 	if err := g.applyIncludes(instance); err != nil {
+		return err
+	}
+
+	if err := g.applyPagination(instance); err != nil {
 		return err
 	}
 
@@ -158,8 +158,8 @@ func toCamelCase(part string) string {
 }
 
 func (g *GormAdapter) applyPagination(instance OptionsInterface) error {
-	var currentPage *int
-	if g.defaultToPagination  {
+	currentPage := instance.GetPage()
+	if g.defaultToPagination && currentPage == nil  {
 		currentPage = &g.defaultPage
 	}
 
